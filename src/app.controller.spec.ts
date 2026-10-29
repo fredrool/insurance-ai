@@ -1,0 +1,26 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AnthropicService } from './anthropic/anthropic.service.js';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [
+        AppService,
+        { provide: AnthropicService, useValue: { ask: async () => '' } },
+      ],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});
