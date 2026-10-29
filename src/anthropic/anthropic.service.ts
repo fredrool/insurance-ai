@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { INSURANCE_AGENT_PROMPT } from './insurance-agent.prompt.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class AnthropicService {
     const response = await this.client.messages.create({
       model: this.config.getOrThrow<string>('ANTHROPIC_MODEL'),
       max_tokens: 512,
+      system: INSURANCE_AGENT_PROMPT,
       messages: [
         {
           role: 'user',
