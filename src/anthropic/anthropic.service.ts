@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { INSURANCE_AGENT_PROMPT } from './insurance-agent.prompt.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { insuranceTools } from './tools/insurance-tools.js';
 
 @Injectable()
 export class AnthropicService {
@@ -18,6 +19,7 @@ export class AnthropicService {
       model: this.config.getOrThrow<string>('ANTHROPIC_MODEL'),
       max_tokens: 512,
       system: INSURANCE_AGENT_PROMPT,
+      tools: insuranceTools,
       messages: [
         {
           role: 'user',
@@ -26,9 +28,14 @@ export class AnthropicService {
       ],
     });
 
-    return response.content
-      .filter((block) => block.type === 'text')
-      .map((block) => block.text)
-      .join('\n');
+    console.dir(
+      {
+        stop_reason: response.stop_reason,
+        content: response.content,
+      },
+      { depth: null },
+    );
+
+    return JSON.stringify(response.content, null, 2);
   }
 }
