@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { INSURANCE_AGENT_PROMPT } from './insurance-agent.prompt.js';
+import { INSURANCE_AGENT_PROMPT } from '../insurance-agent.prompt.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { insuranceTools } from './tools/insurance-tools.js';
 import { InsuranceService } from '../../insurance/insurance.service.js';
