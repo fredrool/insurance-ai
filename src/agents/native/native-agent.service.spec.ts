@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { vi } from 'vitest';
-import { InsuranceService } from '../insurance/insurance.service.js';
-import { AnthropicService } from './anthropic.service.js';
+import { InsuranceService } from '../../insurance/insurance.service.js';
+import { NativeAgentService } from './native-agent.service.js';
 
 const mockMessagesCreate = vi.hoisted(() => vi.fn());
 
@@ -16,8 +16,8 @@ vi.mock('@anthropic-ai/sdk', () => ({
   }),
 }));
 
-describe('AnthropicService', () => {
-  let service: AnthropicService;
+describe('NativeAgentService', () => {
+  let service: NativeAgentService;
   const insuranceService = {
     getClaimStatus: vi.fn(),
     getPolicyDetails: vi.fn(),
@@ -35,7 +35,7 @@ describe('AnthropicService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AnthropicService,
+        NativeAgentService,
         {
           provide: ConfigService,
           useValue: {
@@ -50,7 +50,7 @@ describe('AnthropicService', () => {
       ],
     }).compile();
 
-    service = module.get(AnthropicService);
+    service = module.get(NativeAgentService);
   });
 
   it('should execute a tool and return Claude final response', async () => {
@@ -61,8 +61,7 @@ describe('AnthropicService', () => {
       description: 'Water damage in basement',
       submittedAt: '2026-10-15',
     });
-  
-    // Premier appel : Claude demande un outil
+
     mockMessagesCreate.mockResolvedValueOnce({
       stop_reason: 'tool_use',
       content: [
@@ -74,8 +73,7 @@ describe('AnthropicService', () => {
         },
       ],
     });
-  
-    // Deuxième appel : Claude produit la réponse finale
+
     mockMessagesCreate.mockResolvedValueOnce({
       stop_reason: 'end_turn',
       content: [
@@ -85,18 +83,18 @@ describe('AnthropicService', () => {
         },
       ],
     });
-  
+
     const result = await service.ask(
       'Quel est le statut de ma réclamation CLM-001 ?',
     );
-  
+
     expect(result).toBe(
       'Votre réclamation est en cours d’examen.',
     );
-  
+
     expect(insuranceService.getClaimStatus)
       .toHaveBeenCalledExactlyOnceWith('CLM-001');
-  
+
     expect(mockMessagesCreate).toHaveBeenCalledTimes(2);
 
     const secondCall = mockMessagesCreate.mock.calls[1][0];
@@ -110,20 +108,19 @@ describe('AnthropicService', () => {
     expect(toolResultMessage.role).toBe('user');
 
     expect(toolResultMessage.content).toEqual([
-    {
+      {
         type: 'tool_result',
         tool_use_id: 'toolu_test_001',
         content: JSON.stringify({
-        id: 'CLM-001',
-        policyId: 'POL-001',
-        status: 'under_review',
-        description: 'Water damage in basement',
-        submittedAt: '2026-10-15',
+          id: 'CLM-001',
+          policyId: 'POL-001',
+          status: 'under_review',
+          description: 'Water damage in basement',
+          submittedAt: '2026-10-15',
         }),
-    },
+      },
     ]);
   });
-  
 
   it('rejects invalid tool params, sends is_error tool_result, then returns final answer', async () => {
     mockMessagesCreate.mockResolvedValueOnce({

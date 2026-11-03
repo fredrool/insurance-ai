@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AnthropicModule } from './anthropic/anthropic.module.js';
+import { NativeAgentModule } from './agents/native/native-agent.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { InsuranceModule } from './insurance/insurance.module.js';
@@ -10,7 +10,7 @@ import { InsuranceModule } from './insurance/insurance.module.js';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    AnthropicModule,
+    NativeAgentModule,
     InsuranceModule,
   ],
   controllers: [AppController],

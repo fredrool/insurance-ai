@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AnthropicService } from './anthropic/anthropic.service.js';
+import { NativeAgentService } from './agents/native/native-agent.service.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -11,7 +11,7 @@ describe('AppController', () => {
       controllers: [AppController],
       providers: [
         AppService,
-        { provide: AnthropicService, useValue: { ask: async () => '' } },
+        { provide: NativeAgentService, useValue: { ask: async () => '' } },
       ],
     }).compile();
 
