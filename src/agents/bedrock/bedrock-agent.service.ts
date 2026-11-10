@@ -4,9 +4,11 @@ import { ChatBedrockConverse } from '@langchain/aws';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { createAgent } from 'langchain';
 
+import { BedrockEmbeddingsService } from '../../rag/embeddings/bedrock-embeddings.service.js';
+import { DocumentRetrieverService } from '../../rag/retrieval/document-retriever.service.js';
 import { InsuranceService } from '../../insurance/insurance.service.js';
 import { createInsuranceTools } from '../shared/insurance-tools.factory.js';
-import { INSURANCE_AGENT_PROMPT } from '../shared/insurance-agent.prompt.js';
+import { BEDROCK_INSURANCE_AGENT_PROMPT } from './bedrock-agent.prompt.js';
 
 @Injectable()
 export class BedrockAgentService implements OnModuleInit {
@@ -17,6 +19,8 @@ export class BedrockAgentService implements OnModuleInit {
     private readonly config: ConfigService,
     @Inject(InsuranceService)
     private readonly insuranceService: InsuranceService,
+    private readonly embeddings: BedrockEmbeddingsService,
+    private readonly documentRetriever: DocumentRetrieverService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -34,8 +38,11 @@ export class BedrockAgentService implements OnModuleInit {
 
     this.agent = createAgent({
       model,
-      tools: createInsuranceTools(this.insuranceService),
-      systemPrompt: INSURANCE_AGENT_PROMPT,
+      tools: createInsuranceTools(this.insuranceService, {
+        embeddings: this.embeddings,
+        retriever: this.documentRetriever,
+      }),
+      systemPrompt: BEDROCK_INSURANCE_AGENT_PROMPT,
       checkpointer,
     });
   }

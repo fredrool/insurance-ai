@@ -8,6 +8,6 @@ import { RagService } from './rag.service.js';
 @Module({
   controllers: [RagController],
   providers: [RagService, BedrockEmbeddingsService, DocumentRetrieverService],
-  exports: [RagService],
+  exports: [RagService, BedrockEmbeddingsService, DocumentRetrieverService],
 })
 export class RagModule {}
