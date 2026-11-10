@@ -5,6 +5,7 @@ import { BedrockEmbeddingsService } from '../../rag/embeddings/bedrock-embedding
 import { DocumentRetrieverService } from '../../rag/retrieval/document-retriever.service.js';
 import { InsuranceService } from '../../insurance/insurance.service.js';
 import type { DocumentChunkRow } from '../../rag/rag.types.js';
+import { runToolWithLogging } from './tool-logging.util.js';
 
 const DEFAULT_GLOBAL_TOP_K = 5;
 const DEFAULT_PER_DOCUMENT_TOP_K = 3;
@@ -20,7 +21,9 @@ export function createInsuranceTools(
 ) {
   const getClaimStatus = tool(
     async ({ claimId }) =>
-      JSON.stringify(insuranceService.getClaimStatus(claimId)),
+      runToolWithLogging('getClaimStatus', { claimId }, async () =>
+        JSON.stringify(insuranceService.getClaimStatus(claimId)),
+      ),
     {
       name: 'getClaimStatus',
       description: 'Retrieve the status of an insurance claim.',
@@ -32,7 +35,9 @@ export function createInsuranceTools(
 
   const getPolicyDetails = tool(
     async ({ policyId }) =>
-      JSON.stringify(insuranceService.getPolicyDetails(policyId)),
+      runToolWithLogging('getPolicyDetails', { policyId }, async () =>
+        JSON.stringify(insuranceService.getPolicyDetails(policyId)),
+      ),
     {
       name: 'getPolicyDetails',
       description: 'Retrieve details of an insurance policy.',
@@ -47,26 +52,31 @@ export function createInsuranceTools(
   }
 
   const searchInsuranceDocuments = tool(
-      async ({ query, documentNames, topK }) => {
-        const embedding = await rag.embeddings.embed(query);
+      async ({ query, documentNames, topK }) =>
+        runToolWithLogging(
+          'searchInsuranceDocuments',
+          { query, documentNames, topK },
+          async () => {
+            const embedding = await rag.embeddings.embed(query);
 
-        const chunks: DocumentChunkRow[] =
-          documentNames && documentNames.length > 0
-            ? await rag.retriever.searchByDocuments(
-                embedding,
-                documentNames,
-                topK ?? DEFAULT_PER_DOCUMENT_TOP_K,
-              )
-            : await rag.retriever.searchGlobal(
-                embedding,
-                topK ?? DEFAULT_GLOBAL_TOP_K,
-              );
+            const chunks: DocumentChunkRow[] =
+              documentNames && documentNames.length > 0
+                ? await rag.retriever.searchByDocuments(
+                    embedding,
+                    documentNames,
+                    topK ?? DEFAULT_PER_DOCUMENT_TOP_K,
+                  )
+                : await rag.retriever.searchGlobal(
+                    embedding,
+                    topK ?? DEFAULT_GLOBAL_TOP_K,
+                  );
 
-        return JSON.stringify({
-          query,
-          sources: assignSourceIds(chunks),
-        });
-      },
+            return JSON.stringify({
+              query,
+              sources: assignSourceIds(chunks),
+            });
+          },
+        ),
       {
         name: 'searchInsuranceDocuments',
         description:

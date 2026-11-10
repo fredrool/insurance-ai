@@ -16,13 +16,22 @@ import {
     async ask(
       @Body('question') question: string,
       @Body('conversationId') conversationId: string,
+      @Body('debug') debug?: boolean,
     ) {
       if (!conversationId?.trim()) {
         throw new BadRequestException('conversationId is required');
       }
-  
-      return {
-        answer: await this.agent.ask(question, conversationId),
-      };
+
+      const result = await this.agent.ask(
+        question,
+        conversationId,
+        debug === true,
+      );
+
+      if (typeof result === 'string') {
+        return { answer: result };
+      }
+
+      return result;
     }
   }

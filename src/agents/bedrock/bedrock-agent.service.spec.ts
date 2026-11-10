@@ -9,9 +9,10 @@ import { BedrockAgentService } from './bedrock-agent.service.js';
 import { BEDROCK_INSURANCE_AGENT_PROMPT } from './bedrock-agent.prompt.js';
 
 const mockInvoke = vi.hoisted(() => vi.fn());
+const mockGetState = vi.hoisted(() => vi.fn());
 const createAgentMock = vi.hoisted(() =>
   vi.fn(function createAgent(_config?: unknown) {
-    return { invoke: mockInvoke };
+    return { invoke: mockInvoke, getState: mockGetState };
   }),
 );
 
@@ -51,6 +52,8 @@ describe('BedrockAgentService', () => {
 
   beforeEach(async () => {
     mockInvoke.mockReset();
+    mockGetState.mockReset();
+    mockGetState.mockResolvedValue({ values: { messages: [] } });
     createAgentMock.mockClear();
     agentConfig.tools = [];
     agentConfig.systemPrompt = '';
@@ -112,9 +115,73 @@ describe('BedrockAgentService', () => {
     const answer = await service.ask('Is flood covered?', 'conv-123');
 
     expect(answer).toBe('Answer with citation');
+    expect(mockGetState).toHaveBeenCalledWith({
+      configurable: { thread_id: 'bedrock:conv-123' },
+    });
     expect(mockInvoke).toHaveBeenCalledWith(
       { messages: [{ role: 'user', content: 'Is flood covered?' }] },
       { configurable: { thread_id: 'bedrock:conv-123' } },
     );
+  });
+
+  it('returns debug payload from current turn tool messages', async () => {
+    mockGetState.mockResolvedValue({
+      values: { messages: [{ content: 'historical answer' }] },
+    });
+    mockInvoke.mockResolvedValue({
+      messages: [
+        { content: 'historical answer' },
+        {
+          type: 'ai',
+          tool_calls: [
+            {
+              name: 'searchInsuranceDocuments',
+              args: { query: 'deductible' },
+            },
+          ],
+        },
+        {
+          type: 'tool',
+          name: 'searchInsuranceDocuments',
+          content: JSON.stringify({
+            query: 'deductible',
+            sources: [
+              {
+                id: 'SRC-001',
+                documentName: 'auto-insurance.pdf',
+                documentVersion: '2.1.0',
+                pageNumber: 8,
+                chunkIndex: 3,
+                similarity: 0.9,
+                content: 'Collision deductible applies per occurrence.',
+              },
+            ],
+          }),
+        },
+        { content: 'The deductible is $1,000 per occurrence.' },
+      ],
+    });
+
+    const result = await service.ask('What is my deductible?', 'conv-123', true);
+
+    expect(result).toEqual({
+      answer: 'The deductible is $1,000 per occurrence.',
+      toolCalls: [
+        {
+          name: 'searchInsuranceDocuments',
+          args: { query: 'deductible' },
+        },
+      ],
+      sources: [
+        {
+          id: 'SRC-001',
+          documentName: 'auto-insurance.pdf',
+          documentVersion: '2.1.0',
+          pageNumber: 8,
+          chunkIndex: 3,
+          similarity: 0.9,
+        },
+      ],
+    });
   });
 });

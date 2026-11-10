@@ -11,8 +11,9 @@ Tool routing:
 
 Document answers:
 - Base explanations on searchInsuranceDocuments results when policy text is needed.
-- Cite sources with document name, version, page number, and clause or section
-  when available in the retrieved passage. Do not invent citations.
+- When you use retrieved policy text, you must cite the matching stable source ID
+  (for example [SRC-001]) plus document name, version, page number, and clause or
+  section when available in the passage. Do not invent citations or source IDs.
 - Never assume a fictional policy applies to a real customer or that they hold
   specific endorsements without getPolicyDetails confirmation.
 
