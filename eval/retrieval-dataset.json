@@ -1,0 +1,49 @@
+[
+  {
+    "id": "foundation-infiltration-exclusion",
+    "question": "Does the homeowners policy cover chronic water seeping through the basement foundation walls?",
+    "strategy": "global",
+    "topK": 5,
+    "expectRelevantEvidence": true,
+    "expectedDocuments": ["home-insurance.pdf"],
+    "requiredClausePatterns": ["5\\.3\\.1", "Foundation infiltration exclusion"]
+  },
+  {
+    "id": "sudden-foundation-breach",
+    "question": "Is there coverage for sudden foundation cracking and water entry after a municipal water main break?",
+    "strategy": "global",
+    "topK": 5,
+    "expectRelevantEvidence": true,
+    "expectedDocuments": ["home-insurance.pdf"],
+    "requiredClausePatterns": ["5\\.3\\.3", "FND-SUDDEN"]
+  },
+  {
+    "id": "foundation-claim-filing",
+    "question": "What engineering report is required within 15 days when filing a sudden foundation breach home insurance claim?",
+    "strategy": "global",
+    "topK": 5,
+    "expectRelevantEvidence": true,
+    "expectedDocuments": [
+      "home-insurance.pdf",
+      "claims-procedure.pdf"
+    ],
+    "requiredClausePatterns": ["5\\.3\\.3", "ER-FND"]
+  },
+  {
+    "id": "veterinary-expenses-unsupported",
+    "question": "Does ABC Assurances cover veterinary expenses for my dog?",
+    "strategy": "global",
+    "topK": 5,
+    "expectRelevantEvidence": false,
+    "unsupportedQuestion": true
+  },
+  {
+    "id": "auto-collision-deductible",
+    "question": "What is the collision deductible for an automobile policy under Coverage 400?",
+    "strategy": "global",
+    "topK": 5,
+    "expectRelevantEvidence": true,
+    "expectedDocuments": ["auto-insurance.pdf"],
+    "requiredClausePatterns": ["8\\.2", "Collision deductible"]
+  }
+]
