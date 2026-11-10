@@ -6,6 +6,7 @@ import { NativeAgentModule } from './agents/native/native-agent.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { InsuranceModule } from './insurance/insurance.module.js';
+import { RagModule } from './rag/rag.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { InsuranceModule } from './insurance/insurance.module.js';
     LangchainAgentModule,
     BedrockAgentModule,
     InsuranceModule,
+    RagModule,
   ],
   controllers: [AppController],
   providers: [AppService],
