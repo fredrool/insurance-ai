@@ -15,43 +15,29 @@ export interface RagToolDependencies {
   retriever: DocumentRetrieverService;
 }
 
+export interface CreateInsuranceToolsOptions {
+  /** When false, omit local getClaimStatus / getPolicyDetails (e.g. Bedrock uses MCP). */
+  structuredDataTools?: boolean;
+}
+
+/** Local RAG tool only (structured data supplied elsewhere, e.g. MCP). */
+export function createInsuranceRagTools(rag: RagToolDependencies) {
+  return createInsuranceTools(
+    null as unknown as InsuranceService,
+    rag,
+    { structuredDataTools: false },
+  );
+}
+
 export function createInsuranceTools(
   insuranceService: InsuranceService,
   rag?: RagToolDependencies,
+  options?: CreateInsuranceToolsOptions,
 ) {
-  const getClaimStatus = tool(
-    async ({ claimId }) =>
-      runToolWithLogging('getClaimStatus', { claimId }, async () =>
-        JSON.stringify(insuranceService.getClaimStatus(claimId)),
-      ),
-    {
-      name: 'getClaimStatus',
-      description: 'Retrieve the status of an insurance claim.',
-      schema: z.object({
-        claimId: z.string(),
-      }),
-    },
-  );
+  const includeStructured = options?.structuredDataTools !== false;
 
-  const getPolicyDetails = tool(
-    async ({ policyId }) =>
-      runToolWithLogging('getPolicyDetails', { policyId }, async () =>
-        JSON.stringify(insuranceService.getPolicyDetails(policyId)),
-      ),
-    {
-      name: 'getPolicyDetails',
-      description: 'Retrieve details of an insurance policy.',
-      schema: z.object({
-        policyId: z.string(),
-      }),
-    },
-  );
-
-  if (!rag) {
-    return [getClaimStatus, getPolicyDetails];
-  }
-
-  const searchInsuranceDocuments = tool(
+  const searchInsuranceDocuments = rag
+    ? tool(
       async ({ query, documentNames, topK }) =>
         runToolWithLogging(
           'searchInsuranceDocuments',
@@ -100,9 +86,44 @@ export function createInsuranceTools(
             ),
         }),
       },
-    );
+    )
+    : undefined;
 
-  return [getClaimStatus, getPolicyDetails, searchInsuranceDocuments];
+  const tools = [];
+  if (includeStructured) {
+    tools.push(
+      tool(
+        async ({ claimId }) =>
+          runToolWithLogging('getClaimStatus', { claimId }, async () =>
+            JSON.stringify(insuranceService.getClaimStatus(claimId)),
+          ),
+        {
+          name: 'getClaimStatus',
+          description: 'Retrieve the status of an insurance claim.',
+          schema: z.object({
+            claimId: z.string(),
+          }),
+        },
+      ),
+      tool(
+        async ({ policyId }) =>
+          runToolWithLogging('getPolicyDetails', { policyId }, async () =>
+            JSON.stringify(insuranceService.getPolicyDetails(policyId)),
+          ),
+        {
+          name: 'getPolicyDetails',
+          description: 'Retrieve details of an insurance policy.',
+          schema: z.object({
+            policyId: z.string(),
+          }),
+        },
+      ),
+    );
+  }
+  if (searchInsuranceDocuments) {
+    tools.push(searchInsuranceDocuments);
+  }
+  return tools;
 }
 
 function assignSourceIds(chunks: DocumentChunkRow[]) {

@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { InsuranceModule } from '../../insurance/insurance.module.js';
 import { RagModule } from '../../rag/rag.module.js';
 import { BedrockAgentService } from './bedrock-agent.service.js';
 import { BedrockAgentController } from './bedrock-agent.controller.js';
+import { ClaimsMcpService } from './claims-mcp.service.js';
 
 @Module({
-  imports: [InsuranceModule, RagModule],
+  imports: [RagModule],
   controllers: [BedrockAgentController],
-  providers: [BedrockAgentService],
+  providers: [ClaimsMcpService, BedrockAgentService],
 })
 export class BedrockAgentModule {}

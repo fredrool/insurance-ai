@@ -4,8 +4,8 @@ import { vi } from 'vitest';
 
 import { BedrockEmbeddingsService } from '../../rag/embeddings/bedrock-embeddings.service.js';
 import { DocumentRetrieverService } from '../../rag/retrieval/document-retriever.service.js';
-import { InsuranceService } from '../../insurance/insurance.service.js';
 import { BedrockAgentService } from './bedrock-agent.service.js';
+import { ClaimsMcpService } from './claims-mcp.service.js';
 import { BEDROCK_INSURANCE_AGENT_PROMPT } from './bedrock-agent.prompt.js';
 
 const mockInvoke = vi.hoisted(() => vi.fn());
@@ -77,8 +77,13 @@ describe('BedrockAgentService', () => {
           },
         },
         {
-          provide: InsuranceService,
-          useValue: { getClaimStatus: vi.fn(), getPolicyDetails: vi.fn() },
+          provide: ClaimsMcpService,
+          useValue: {
+            getTools: () => [
+              { name: 'getClaimStatus' },
+              { name: 'getPolicyDetails' },
+            ],
+          },
         },
         {
           provide: BedrockEmbeddingsService,

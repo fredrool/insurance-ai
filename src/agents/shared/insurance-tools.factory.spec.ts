@@ -20,6 +20,18 @@ describe('createInsuranceTools', () => {
     ]);
   });
 
+  it('can omit structured data tools for MCP-backed agents', () => {
+    const embeddings = { embed: vi.fn() };
+    const retriever = { searchGlobal: vi.fn(), searchByDocuments: vi.fn() };
+    const tools = createInsuranceTools(
+      insuranceService,
+      { embeddings, retriever } as unknown as RagToolDependencies,
+      { structuredDataTools: false },
+    );
+
+    expect(tools.map((tool) => tool.name)).toEqual(['searchInsuranceDocuments']);
+  });
+
   it('searchInsuranceDocuments returns JSON passages without calling an LLM', async () => {
     const embeddings = { embed: vi.fn().mockResolvedValue([0.1, 0.2]) };
     const retriever = {
