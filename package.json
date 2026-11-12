@@ -21,7 +21,8 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "generate:documents": "node scripts/generate-policy-pdfs.mjs",
-    "eval:retrieval": "node scripts/eval-retrieval.mjs"
+    "eval:retrieval": "node scripts/eval-retrieval.mjs",
+    "db:init": "docker exec -i insurance-ai-postgres psql -v ON_ERROR_STOP=1 -U insurance -d insurance_ai < db/init.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
