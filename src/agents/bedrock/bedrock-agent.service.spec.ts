@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 import { BedrockEmbeddingsService } from '../../rag/embeddings/bedrock-embeddings.service.js';
 import { DocumentRetrieverService } from '../../rag/retrieval/document-retriever.service.js';
 import { BedrockAgentService } from './bedrock-agent.service.js';
-import { ClaimsMcpService } from './claims-mcp.service.js';
+import { InsuranceMcpService } from './insurance-mcp.service.js';
 import { BEDROCK_INSURANCE_AGENT_PROMPT } from './bedrock-agent.prompt.js';
 
 const mockInvoke = vi.hoisted(() => vi.fn());
@@ -77,11 +77,13 @@ describe('BedrockAgentService', () => {
           },
         },
         {
-          provide: ClaimsMcpService,
+          provide: InsuranceMcpService,
           useValue: {
             getTools: () => [
-              { name: 'getClaimStatus' },
-              { name: 'getPolicyDetails' },
+              { name: 'claims_getClaimStatus' },
+              { name: 'claims_getPolicyDetails' },
+              { name: 'crm_getCustomerDetails' },
+              { name: 'crm_getCustomerByPolicy' },
             ],
           },
         },
@@ -103,10 +105,12 @@ describe('BedrockAgentService', () => {
     await service.onModuleInit();
   });
 
-  it('registers searchInsuranceDocuments with structured data tools at init', () => {
+  it('registers MCP and RAG tools at init', () => {
     expect(agentConfig.tools.map((tool) => tool.name)).toEqual([
-      'getClaimStatus',
-      'getPolicyDetails',
+      'claims_getClaimStatus',
+      'claims_getPolicyDetails',
+      'crm_getCustomerDetails',
+      'crm_getCustomerByPolicy',
       'searchInsuranceDocuments',
     ]);
     expect(agentConfig.systemPrompt).toBe(BEDROCK_INSURANCE_AGENT_PROMPT);
@@ -127,6 +131,64 @@ describe('BedrockAgentService', () => {
       { messages: [{ role: 'user', content: 'Is flood covered?' }] },
       { configurable: { thread_id: 'bedrock:conv-123' } },
     );
+  });
+
+  it('returns debug payload with Claims and CRM MCP tool calls', async () => {
+    mockInvoke.mockResolvedValue({
+      messages: [
+        {
+          type: 'ai',
+          tool_calls: [
+            {
+              name: 'claims_getClaimStatus',
+              args: { claimId: 'CLM-001' },
+            },
+          ],
+        },
+        {
+          type: 'tool',
+          name: 'claims_getClaimStatus',
+          content: JSON.stringify({
+            id: 'CLM-001',
+            policyId: 'POL-001',
+            status: 'under_review',
+          }),
+        },
+        {
+          type: 'ai',
+          tool_calls: [
+            {
+              name: 'crm_getCustomerByPolicy',
+              args: { policyId: 'POL-001' },
+            },
+          ],
+        },
+        {
+          type: 'tool',
+          name: 'crm_getCustomerByPolicy',
+          content: JSON.stringify({
+            id: 'CUS-1001',
+            displayName: 'Alex Martin',
+            policyIds: ['POL-001'],
+          }),
+        },
+        { content: 'Claim CLM-001 belongs to Alex Martin (POL-001).' },
+      ],
+    });
+
+    const result = await service.ask(
+      'Who owns the policy for claim CLM-001?',
+      'conv-mcp',
+      true,
+    );
+
+    expect(result).toMatchObject({
+      answer: 'Claim CLM-001 belongs to Alex Martin (POL-001).',
+      toolCalls: [
+        { name: 'claims_getClaimStatus', args: { claimId: 'CLM-001' } },
+        { name: 'crm_getCustomerByPolicy', args: { policyId: 'POL-001' } },
+      ],
+    });
   });
 
   it('returns debug payload from current turn tool messages', async () => {

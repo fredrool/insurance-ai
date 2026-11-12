@@ -7,7 +7,7 @@ import { createAgent } from 'langchain';
 import { BedrockEmbeddingsService } from '../../rag/embeddings/bedrock-embeddings.service.js';
 import { DocumentRetrieverService } from '../../rag/retrieval/document-retriever.service.js';
 import { createInsuranceRagTools } from '../shared/insurance-tools.factory.js';
-import { ClaimsMcpService } from './claims-mcp.service.js';
+import { InsuranceMcpService } from './insurance-mcp.service.js';
 import { BEDROCK_INSURANCE_AGENT_PROMPT } from './bedrock-agent.prompt.js';
 import type { BedrockAskResult } from './bedrock-agent.types.js';
 import {
@@ -30,7 +30,7 @@ export class BedrockAgentService implements OnModuleInit {
     private readonly config: ConfigService,
     private readonly embeddings: BedrockEmbeddingsService,
     private readonly documentRetriever: DocumentRetrieverService,
-    private readonly claimsMcp: ClaimsMcpService,
+    private readonly insuranceMcp: InsuranceMcpService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -53,7 +53,7 @@ export class BedrockAgentService implements OnModuleInit {
 
     this.agent = createAgent({
       model,
-      tools: [...this.claimsMcp.getTools(), ...ragTools],
+      tools: [...this.insuranceMcp.getTools(), ...ragTools],
       systemPrompt: BEDROCK_INSURANCE_AGENT_PROMPT,
       checkpointer,
     }) as StatefulBedrockAgent;

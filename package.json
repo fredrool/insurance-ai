@@ -23,6 +23,8 @@
     "generate:documents": "node scripts/generate-policy-pdfs.mjs",
     "eval:retrieval": "node scripts/eval-retrieval.mjs",
     "mcp:claims": "tsx mcp/claims/server.ts",
+    "mcp:crm": "tsx mcp/crm/server.ts",
+    "mcp:inspector": "npx @modelcontextprotocol/inspector   npx tsx mcp/crm/server.ts",
     "db:init": "docker exec -i insurance-ai-postgres psql -v ON_ERROR_STOP=1 -U insurance -d insurance_ai < db/init.sql"
   },
   "dependencies": {

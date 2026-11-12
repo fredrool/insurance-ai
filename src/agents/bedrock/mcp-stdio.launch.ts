@@ -1,17 +1,18 @@
 import path from 'node:path';
 
-export interface ClaimsMcpLaunchConfig {
+export interface McpStdioLaunchConfig {
   command: string;
   args: string[];
   cwd: string;
 }
 
-/** Stdio launch for the MCP Claims server (Node + project tsx; no shell/npx). */
-export function resolveClaimsMcpServerLaunch(
+/** Stdio launch for an MCP server entry (Node + project tsx; no shell/npx). */
+export function resolveMcpStdioServerLaunch(
+  serverEntryRelativePath: string,
   projectRoot = process.cwd(),
-): ClaimsMcpLaunchConfig {
+): McpStdioLaunchConfig {
   const tsxCli = path.join(projectRoot, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-  const serverEntry = path.join(projectRoot, 'mcp', 'claims', 'server.ts');
+  const serverEntry = path.join(projectRoot, serverEntryRelativePath);
 
   return {
     command: process.execPath,
