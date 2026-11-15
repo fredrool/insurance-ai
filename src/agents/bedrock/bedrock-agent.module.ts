@@ -8,5 +8,6 @@ import { InsuranceMcpService } from './insurance-mcp.service.js';
   imports: [RagModule],
   controllers: [BedrockAgentController],
   providers: [InsuranceMcpService, BedrockAgentService],
+  exports: [InsuranceMcpService],
 })
 export class BedrockAgentModule {}

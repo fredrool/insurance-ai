@@ -88,6 +88,22 @@ export class InsuranceMcpService implements OnModuleInit, OnModuleDestroy {
     return this.tools;
   }
 
+  /** Invoke a discovered MCP tool by its prefixed LangChain name (shared adapter). */
+  async invokeTool(
+    toolName: string,
+    input: Record<string, unknown>,
+  ): Promise<string> {
+    const tool = this.tools.find((candidate) => candidate.name === toolName);
+    if (!tool) {
+      throw new Error(`MCP tool not available: ${toolName}`);
+    }
+    const result = await tool.invoke(input);
+    if (typeof result === 'string') {
+      return result;
+    }
+    return JSON.stringify(result);
+  }
+
   async onModuleDestroy(): Promise<void> {
     if (!this.adapter) return;
     await this.adapter.close();

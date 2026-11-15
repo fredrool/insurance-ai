@@ -89,6 +89,39 @@ docker compose down
 - Les appels aux modèles AWS Bedrock sont facturés selon l'utilisation ; configurer une alerte AWS Budgets est recommandé.
 
 
+## Architecture comparison: Version A vs Version B
+
+Both versions share the same NestJS process, MCP Claims/CRM stdio servers (started once via `InsuranceMcpService`), RAG embeddings/retriever, and Bedrock Haiku model id from `.env`. They do not share conversation checkpoints or agent loops.
+
+### Version A — autonomous Bedrock agent (`createAgent`)
+
+- **Endpoint:** `POST /agents/bedrock/ask`
+- **Body:** `{ "conversationId": "...", "question": "...", "debug": true }` (optional `debug`)
+- **Behavior:** LangChain agent chooses MCP and RAG tools per turn; PostgresSaver keeps multi-turn memory.
+- **Example:**
+
+```bash
+curl -s http://localhost:3000/agents/bedrock/ask \
+  -H "Content-Type: application/json" \
+  -d '{"conversationId":"demo-001","question":"For claim CLM-001, who is the customer?","debug":true}'
+```
+
+### Version B — explicit LangGraph workflow
+
+- **Endpoint:** `POST /workflows/claim-lookup`
+- **Body:** `{ "claimId": "CLM-001", "question": "..." }`
+- **Behavior:** Fixed graph: MCP claim → MCP customer by `policyId` → RAG retrieval → **one** Haiku completion. Returns `answer`, `sources`, `warnings`, `claim`, `customer`, and `metrics` (duration, LLM/MCP call counts, tokens).
+- **No** conversation id and **no** Postgres checkpoint for this workflow.
+- **Example:**
+
+```bash
+curl -s http://localhost:3000/workflows/claim-lookup \
+  -H "Content-Type: application/json" \
+  -d '{"claimId":"CLM-001","question":"For claim CLM-001, identify the customer, check the claim status, and explain which policy clauses may apply to the reported water damage."}'
+```
+
+Run either endpoint while `npm run start:dev` is up; both can be exercised independently without calling one from the other.
+
 ## langchain ask example
 
 

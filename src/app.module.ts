@@ -7,6 +7,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { InsuranceModule } from './insurance/insurance.module.js';
 import { RagModule } from './rag/rag.module.js';
+import { ClaimLookupModule } from './workflows/claim-lookup/claim-lookup.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RagModule } from './rag/rag.module.js';
     NativeAgentModule,
     LangchainAgentModule,
     BedrockAgentModule,
+    ClaimLookupModule,
     InsuranceModule,
     RagModule,
   ],
