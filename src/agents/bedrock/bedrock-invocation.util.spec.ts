@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  extractTurnMetrics,
   extractTurnObservability,
   sliceTurnMessages,
 } from './bedrock-invocation.util.js';
@@ -80,5 +81,54 @@ describe('bedrock invocation utils', () => {
         similarity: 0.91,
       },
     ]);
+  });
+
+  it('extracts llm and MCP metrics from the current turn only', () => {
+    const priorTurn = [
+      {
+        type: 'ai',
+        content: 'old',
+        usage_metadata: { input_tokens: 999, output_tokens: 999 },
+      },
+      {
+        type: 'tool',
+        name: 'claims_getClaimStatus',
+        content: '{}',
+      },
+    ];
+
+    const currentTurn = [
+      {
+        type: 'ai',
+        tool_calls: [{ name: 'claims_getClaimStatus', args: { claimId: 'CLM-001' } }],
+        usage_metadata: { input_tokens: 100, output_tokens: 20 },
+      },
+      {
+        type: 'tool',
+        name: 'claims_getClaimStatus',
+        content: JSON.stringify({ id: 'CLM-001', policyId: 'POL-001' }),
+      },
+      {
+        type: 'tool',
+        name: 'searchInsuranceDocuments',
+        content: JSON.stringify({ query: 'water', sources: [] }),
+      },
+      {
+        type: 'ai',
+        content: 'Summary.',
+        usage_metadata: { input_tokens: 200, output_tokens: 50 },
+      },
+    ];
+
+    const all = [...priorTurn, ...currentTurn];
+    const turnMessages = sliceTurnMessages(all, priorTurn.length);
+    const metrics = extractTurnMetrics(turnMessages);
+
+    expect(metrics).toEqual({
+      llmCalls: 2,
+      mcpCalls: 1,
+      inputTokens: 300,
+      outputTokens: 70,
+    });
   });
 });

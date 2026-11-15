@@ -188,7 +188,16 @@ describe('BedrockAgentService', () => {
         { name: 'claims_getClaimStatus', args: { claimId: 'CLM-001' } },
         { name: 'crm_getCustomerByPolicy', args: { policyId: 'POL-001' } },
       ],
+      metrics: {
+        llmCalls: 2,
+        mcpCalls: 2,
+        inputTokens: 0,
+        outputTokens: 0,
+      },
     });
+    expect(
+      typeof (result as { metrics?: { durationMs: number } }).metrics?.durationMs,
+    ).toBe('number');
   });
 
   it('returns debug payload from current turn tool messages', async () => {
@@ -249,6 +258,63 @@ describe('BedrockAgentService', () => {
           similarity: 0.9,
         },
       ],
+      metrics: {
+        llmCalls: 1,
+        mcpCalls: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        durationMs: expect.any(Number),
+      },
+    });
+  });
+
+  it('excludes prior checkpoint messages from debug metrics', async () => {
+    mockGetState.mockResolvedValue({
+      values: {
+        messages: [
+          {
+            type: 'ai',
+            content: 'prior',
+            usage_metadata: { input_tokens: 500, output_tokens: 500 },
+          },
+          {
+            type: 'tool',
+            name: 'claims_getClaimStatus',
+            content: '{}',
+          },
+        ],
+      },
+    });
+    mockInvoke.mockResolvedValue({
+      messages: [
+        {
+          type: 'ai',
+          content: 'prior',
+          usage_metadata: { input_tokens: 500, output_tokens: 500 },
+        },
+        {
+          type: 'tool',
+          name: 'claims_getClaimStatus',
+          content: '{}',
+        },
+        { role: 'user', content: 'new question' },
+        {
+          type: 'ai',
+          content: 'new answer',
+          usage_metadata: { input_tokens: 10, output_tokens: 5 },
+        },
+      ],
+    });
+
+    const result = await service.ask('hello', 'conv-history', true);
+
+    expect(result).toMatchObject({
+      metrics: {
+        llmCalls: 1,
+        mcpCalls: 0,
+        inputTokens: 10,
+        outputTokens: 5,
+      },
     });
   });
 });

@@ -1,3 +1,5 @@
+import type { AgentExecutionMetrics } from './agent-execution-metrics.js';
+
 export interface BedrockToolCallSummary {
   name: string;
   args: Record<string, unknown>;
@@ -16,4 +18,5 @@ export interface BedrockAskResult {
   answer: string;
   toolCalls: BedrockToolCallSummary[];
   sources: BedrockRetrievalSource[];
+  metrics: AgentExecutionMetrics;
 }

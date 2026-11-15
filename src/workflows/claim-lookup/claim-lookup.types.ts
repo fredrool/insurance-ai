@@ -13,13 +13,9 @@ export interface ClaimLookupCustomer {
   policyIds: string[];
 }
 
-export interface ClaimLookupExecutionMetrics {
-  durationMs: number;
-  llmCalls: number;
-  mcpCalls: number;
-  inputTokens: number;
-  outputTokens: number;
-}
+import type { AgentExecutionMetrics } from '../../agents/bedrock/agent-execution-metrics.js';
+
+export type ClaimLookupExecutionMetrics = AgentExecutionMetrics;
 
 export interface ClaimLookupResponse {
   answer: string;

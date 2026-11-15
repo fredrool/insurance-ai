@@ -11,6 +11,7 @@ import { InsuranceMcpService } from './insurance-mcp.service.js';
 import { BEDROCK_INSURANCE_AGENT_PROMPT } from './bedrock-agent.prompt.js';
 import type { BedrockAskResult } from './bedrock-agent.types.js';
 import {
+  extractTurnMetrics,
   extractTurnObservability,
   sliceTurnMessages,
 } from './bedrock-invocation.util.js';
@@ -77,12 +78,14 @@ export class BedrockAgentService implements OnModuleInit {
     const priorState = await this.agent.getState(invokeConfig);
     const priorMessageCount = priorState.values?.messages?.length ?? 0;
 
+    const startedAt = performance.now();
     const result = await this.agent.invoke(
       {
         messages: [{ role: 'user', content: question }],
       },
       invokeConfig,
     );
+    const durationMs = Math.round(performance.now() - startedAt);
 
     const answer = this.extractAnswer(result.messages);
     const turnMessages = sliceTurnMessages(result.messages, priorMessageCount);
@@ -92,7 +95,16 @@ export class BedrockAgentService implements OnModuleInit {
       return answer;
     }
 
-    return { answer, toolCalls, sources };
+    const turnMetrics = extractTurnMetrics(turnMessages);
+    return {
+      answer,
+      toolCalls,
+      sources,
+      metrics: {
+        durationMs,
+        ...turnMetrics,
+      },
+    };
   }
 
   private extractAnswer(messages: unknown[] | undefined): string {
