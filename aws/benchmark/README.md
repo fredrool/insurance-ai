@@ -1,4 +1,4 @@
-# Insurance-AI Version C — AgentCore Gateway benchmark (Phase 1)
+# Insurance-AI Version C — AgentCore Gateway benchmark (Phase 1 + Phase 2)
 
 This folder is **isolated** from Versions A/B (`POST /agents/bedrock/ask`, `POST /workflows/claim-lookup`). Nothing here changes the NestJS app or local stdio MCP servers.
 
@@ -16,7 +16,7 @@ Understand how **Amazon Bedrock AgentCore Gateway** turns **AWS Lambda** functio
 | `clients/gateway-mcp-test.ts` | MCP SDK + SigV4 Streamable HTTP — discovers tools, calls two tools, compares to fixtures |
 | `tests/` | Handler + domain parity tests (local, no AWS) |
 
-**Phase 2** (Step Functions + RAG + generate Lambdas) is documented in [PHASE2.md](./PHASE2.md) and is **not** built yet.
+**Phase 2** adds Step Functions + S3 RAG + Bedrock answer Lambdas — see [PHASE2.md](./PHASE2.md).
 
 ## AgentCore Gateway in one page
 
@@ -40,11 +40,11 @@ Understand how **Amazon Bedrock AgentCore Gateway** turns **AWS Lambda** functio
 
 ```
 aws/benchmark/
-  shared/src/          # claims + crm pure functions
-  lambdas/             # Gateway-ready handlers
-  clients/             # SigV4 MCP test client
-  terraform/           # Gateway, targets, Lambda, IAM
-  scripts/             # build-lambdas.mjs
+  shared/src/          # claims + crm + workflow/RAG/gateway helpers
+  lambdas/             # Gateway tool Lambdas + workflow step Lambdas
+  clients/             # SigV4 MCP test + Step Functions run client
+  terraform/           # Gateway, workflow, S3 corpus, Step Functions
+  scripts/             # build-lambdas.mjs, export-corpus-to-s3.mjs
   tests/               # vitest (local)
 ```
 
@@ -105,6 +105,23 @@ This usually means the MCP client sent a **2026-era** request (for example `serv
 
 Also verify `AGENTCORE_GATEWAY_MCP_URL` ends with `/mcp` (use terraform output `gateway_mcp_url`) and that your IAM principal has `bedrock-agentcore:InvokeGateway` on the gateway ARN.
 
+## Phase 2 — claim-lookup on AWS
+
+After Phase 1 `npm run test:gateway` succeeds, apply Terraform (Phase 2 resources ship in the same stack), export the RAG corpus, and run the workflow:
+
+```bash
+export DATABASE_URL=postgresql://...   # local DB with document_chunks
+export CORPUS_BUCKET="$(terraform -chdir=terraform output -raw corpus_bucket)"
+npm run export:corpus
+
+export CLAIM_LOOKUP_STATE_MACHINE_ARN="$(terraform -chdir=terraform output -raw claim_lookup_state_machine_arn)"
+npm run test:workflow
+```
+
+The run client uses the same default question as Version B for `CLM-001` / water damage. Metrics cover the **full** execution (`mcpCalls` = 2 when claim + CRM succeed, `embeddingCalls` = 1, `llmCalls` = 1).
+
+The default Haiku id (`us.anthropic.claude-haiku-…`) uses a cross-region inference profile; the workflow Lambda IAM policy allows Bedrock in **all regions** for foundation models and inference profiles. To keep IAM regional, set `bedrock_model_id` to a non-`us.` regional model id in `terraform/variables.tf` instead.
+
 ## Destroy (after experiments)
 
 ```bash
@@ -121,7 +138,7 @@ Confirm all `insurance-ai-benchmark-*` resources are gone (Gateway, targets, Lam
 | MCP transport | Local stdio child processes | Same | **Managed Gateway HTTP + IAM** |
 | Claims/CRM | In-process MCP adapter | Same | **Lambda behind Gateway** |
 | Cold start | MCP process spawn | Same | **Lambda + Gateway latency** on each tool call |
-| RAG / Step Functions | Yes / No | Yes / No | **Not in Phase 1** |
+| RAG / Step Functions | Yes / No | Yes / No | **Phase 2: S3 RAG + Step Functions** |
 
 Extra latency in C is **not** “Step Functions” until Phase 2; Phase 1 overhead is mainly **network + Gateway + Lambda cold start**.
 

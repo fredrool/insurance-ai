@@ -1,0 +1,26 @@
+{
+  "Comment": "Version C Phase 2 — claim lookup (Gateway MCP → RAG S3 → Bedrock answer)",
+  "StartAt": "LoadClaim",
+  "States": {
+    "LoadClaim": {
+      "Type": "Task",
+      "Resource": "${load_claim_arn}",
+      "Next": "LoadCustomer"
+    },
+    "LoadCustomer": {
+      "Type": "Task",
+      "Resource": "${load_customer_arn}",
+      "Next": "RetrievePolicyClauses"
+    },
+    "RetrievePolicyClauses": {
+      "Type": "Task",
+      "Resource": "${retrieve_arn}",
+      "Next": "GenerateAnswer"
+    },
+    "GenerateAnswer": {
+      "Type": "Task",
+      "Resource": "${generate_answer_arn}",
+      "End": true
+    }
+  }
+}

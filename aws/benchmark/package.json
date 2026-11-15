@@ -7,16 +7,22 @@
     "build:lambdas": "node scripts/build-lambdas.mjs",
     "test": "vitest run",
     "test:gateway": "tsx clients/gateway-mcp-test.ts",
+    "test:workflow": "tsx clients/run-claim-workflow.ts",
+    "export:corpus": "node scripts/export-corpus-to-s3.mjs",
     "terraform:init": "terraform -chdir=terraform init",
     "terraform:plan": "npm run build:lambdas && terraform -chdir=terraform plan",
     "terraform:destroy": "terraform -chdir=terraform destroy"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.972.0",
+    "@aws-sdk/client-s3": "^3.972.0",
+    "@aws-sdk/client-sfn": "^3.972.0",
     "@modelcontextprotocol/client": "^2.4.0"
   },
   "devDependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/credential-provider-node": "^3.972.0",
+    "pg": "^8.16.3",
     "@smithy/protocol-http": "^5.3.10",
     "@smithy/signature-v4": "^5.3.10",
     "@types/aws-lambda": "^8.10.150",

@@ -28,3 +28,17 @@ output "claims_lambda_arn" {
 output "crm_lambda_arn" {
   value = aws_lambda_function.crm.arn
 }
+
+output "corpus_bucket" {
+  description = "Upload document_chunks export here (npm run export:corpus)."
+  value       = aws_s3_bucket.corpus.id
+}
+
+output "corpus_object_key" {
+  value = var.corpus_object_key
+}
+
+output "claim_lookup_state_machine_arn" {
+  description = "Step Functions Standard workflow (Phase 2). Set CLAIM_LOOKUP_STATE_MACHINE_ARN for the run client."
+  value       = aws_sfn_state_machine.claim_lookup.arn
+}
