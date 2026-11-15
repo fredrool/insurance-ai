@@ -1,0 +1,29 @@
+{
+  "name": "insurance-ai-benchmark",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:lambdas": "node scripts/build-lambdas.mjs",
+    "test": "vitest run",
+    "test:gateway": "tsx clients/gateway-mcp-test.ts",
+    "terraform:init": "terraform -chdir=terraform init",
+    "terraform:plan": "npm run build:lambdas && terraform -chdir=terraform plan",
+    "terraform:destroy": "terraform -chdir=terraform destroy"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^2.4.0"
+  },
+  "devDependencies": {
+    "@aws-crypto/sha256-js": "^5.2.0",
+    "@aws-sdk/credential-provider-node": "^3.972.0",
+    "@smithy/protocol-http": "^5.3.10",
+    "@smithy/signature-v4": "^5.3.10",
+    "@types/aws-lambda": "^8.10.150",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}

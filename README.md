@@ -122,6 +122,10 @@ curl -s http://localhost:3000/workflows/claim-lookup \
 
 Run either endpoint while `npm run start:dev` is up; both can be exercised independently without calling one from the other.
 
+### Version C — AgentCore Gateway benchmark (Phase 1, separate folder)
+
+Managed MCP over Lambda (not wired into Nest). See [aws/benchmark/README.md](aws/benchmark/README.md). **Do not run `terraform apply` until you explicitly approve deployment.**
+
 ## langchain ask example
 
 

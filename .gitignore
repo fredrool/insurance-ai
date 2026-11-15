@@ -62,3 +62,11 @@ backups/*
 mcp-claims-err.txt
 
 response*.json
+
+# Version C benchmark artifacts (no secrets)
+aws/benchmark/node_modules/
+aws/benchmark/dist/
+aws/benchmark/terraform/.terraform/
+aws/benchmark/terraform/*.tfstate
+aws/benchmark/terraform/*.tfstate.*
+aws/benchmark/terraform/.terraform.lock.hcl
