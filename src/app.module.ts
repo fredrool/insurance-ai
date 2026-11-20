@@ -8,6 +8,7 @@ import { AppService } from './app.service.js';
 import { InsuranceModule } from './insurance/insurance.module.js';
 import { RagModule } from './rag/rag.module.js';
 import { ClaimLookupModule } from './workflows/claim-lookup/claim-lookup.module.js';
+import { ClaimReviewModule } from './workflows/claim-review/claim-review.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ClaimLookupModule } from './workflows/claim-lookup/claim-lookup.module.
     LangchainAgentModule,
     BedrockAgentModule,
     ClaimLookupModule,
+    ClaimReviewModule,
     InsuranceModule,
     RagModule,
   ],

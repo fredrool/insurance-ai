@@ -122,6 +122,46 @@ curl -s http://localhost:3000/workflows/claim-lookup \
 
 Run either endpoint while `npm run start:dev` is up; both can be exercised independently without calling one from the other.
 
+### Version B′ — LangGraph human-in-the-loop (`interrupt()` + `Command({ resume })`)
+
+- **Endpoints:** `POST /workflows/claim-review` then `POST /workflows/claim-review/resume`
+- **Behavior:** Same data path as Version B (MCP claim → MCP customer → RAG → **one** Haiku call for a *draft recommendation*), then **`interrupt()`** pauses until an adjuster responds. No claim or payment APIs are called; approve/reject outcomes are **simulated** in graph state only.
+- **Persistence:** `PostgresSaver` with `thread_id` values prefixed `claim-review:` (separate from the autonomous agent’s `bedrock:` conversation ids). Restart NestJS between interrupt and resume to prove checkpoints survive.
+- **LangGraph note:** The interrupting node only calls `interrupt()` (no MCP/LLM). Recommendation generation runs in the previous node so a resume does not repeat expensive steps when LangGraph re-enters the interrupt node.
+
+**Start (expect `status: "awaiting_approval"` and a `threadId`):**
+
+```bash
+curl -s http://localhost:3000/workflows/claim-review \
+  -H "Content-Type: application/json" \
+  -d '{"claimId":"CLM-001","question":"Review claim CLM-001 and recommend whether it should be approved."}'
+```
+
+**Resume — approved:**
+
+```bash
+curl -s http://localhost:3000/workflows/claim-review/resume \
+  -H "Content-Type: application/json" \
+  -d '{"threadId":"<threadId from start>","approved":true,"comment":"Approved by claims adjuster"}'
+```
+
+**Resume — rejected:**
+
+```bash
+curl -s http://localhost:3000/workflows/claim-review/resume \
+  -H "Content-Type: application/json" \
+  -d '{"threadId":"<threadId from start>","approved":false,"comment":"Insufficient documentation"}'
+```
+
+**Persistence demo:** Stop Nest (`Ctrl+C`), run `npm run start:dev` again, then call **resume** with the same `threadId` (no need to call start again).
+
+| Concept | Role |
+|--------|------|
+| `interrupt(payload)` | Saves a human task in the checkpoint and stops the run until `Command({ resume })` |
+| `PostgresSaver` | Stores channel state + pending interrupt metadata across process restarts |
+| `thread_id` | Isolates this workflow run; must not reuse `conversationId` from Version A |
+| `Command({ resume })` | Supplies the adjuster decision; resumes inside the interrupt node without restarting from `START` |
+
 ### Version C — AgentCore Gateway benchmark (Phase 1, separate folder)
 
 Managed MCP over Lambda (not wired into Nest). See [aws/benchmark/README.md](aws/benchmark/README.md). **Do not run `terraform apply` until you explicitly approve deployment.**
