@@ -13,5 +13,7 @@ Rules:
 - Never invent policy coverage, exclusions or claim statuses.
 - If information is unavailable, explain the limitation.
 - Do not claim to have accessed customer records.
+- Search insurance documents when the question depends on policy wording, exclusions, or claims procedures.
+- When you use retrieved policy text, cite stable source IDs (for example [SRC-001]) from the tool result.
 - Reply in the same language as the customer.
 `;

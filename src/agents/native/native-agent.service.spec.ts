@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { vi } from 'vitest';
 import { InsuranceService } from '../../insurance/insurance.service.js';
+import { BedrockEmbeddingsService } from '../../rag/embeddings/bedrock-embeddings.service.js';
+import { DocumentRetrieverService } from '../../rag/retrieval/document-retriever.service.js';
 import { NativeAgentService } from './native-agent.service.js';
 
 const mockMessagesCreate = vi.hoisted(() => vi.fn());
@@ -22,11 +24,19 @@ describe('NativeAgentService', () => {
     getClaimStatus: vi.fn(),
     getPolicyDetails: vi.fn(),
   };
+  const embeddings = { embed: vi.fn() };
+  const documentRetriever = {
+    searchGlobal: vi.fn(),
+    searchByDocuments: vi.fn(),
+  };
 
   beforeEach(async () => {
     mockMessagesCreate.mockReset();
     insuranceService.getClaimStatus.mockReset();
     insuranceService.getPolicyDetails.mockReset();
+    embeddings.embed.mockReset();
+    documentRetriever.searchGlobal.mockReset();
+    documentRetriever.searchByDocuments.mockReset();
 
     mockMessagesCreate.mockResolvedValue({
       stop_reason: 'end_turn',
@@ -47,6 +57,8 @@ describe('NativeAgentService', () => {
           },
         },
         { provide: InsuranceService, useValue: insuranceService },
+        { provide: BedrockEmbeddingsService, useValue: embeddings },
+        { provide: DocumentRetrieverService, useValue: documentRetriever },
       ],
     }).compile();
 
@@ -242,6 +254,60 @@ describe('NativeAgentService', () => {
 
     expect(mockMessagesCreate).toHaveBeenCalledTimes(5);
     expect(insuranceService.getClaimStatus).toHaveBeenCalledTimes(5);
+  });
+
+  it('executes searchInsuranceDocuments and returns final answer', async () => {
+    embeddings.embed.mockResolvedValue([0.1, 0.2]);
+    documentRetriever.searchGlobal.mockResolvedValue([
+      {
+        documentName: 'home-insurance.pdf',
+        documentVersion: '2.1.0',
+        pageNumber: 8,
+        chunkIndex: 2,
+        content: 'Foundation seepage may be excluded.',
+        similarity: 0.92,
+      },
+    ]);
+
+    mockMessagesCreate.mockResolvedValueOnce({
+      stop_reason: 'tool_use',
+      content: [
+        {
+          type: 'tool_use',
+          id: 'toolu_rag_001',
+          name: 'searchInsuranceDocuments',
+          input: { query: 'foundation water infiltration coverage' },
+        },
+      ],
+    });
+
+    mockMessagesCreate.mockResolvedValueOnce({
+      stop_reason: 'end_turn',
+      content: [
+        {
+          type: 'text',
+          text: 'According to [SRC-001], gradual foundation seepage may be excluded.',
+        },
+      ],
+    });
+
+    const result = await service.ask(
+      'Is water infiltration through foundations covered?',
+    );
+
+    expect(result).toContain('[SRC-001]');
+    expect(embeddings.embed).toHaveBeenCalledWith(
+      'foundation water infiltration coverage',
+    );
+    expect(documentRetriever.searchGlobal).toHaveBeenCalledOnce();
+    expect(mockMessagesCreate).toHaveBeenCalledTimes(2);
+
+    const toolResult = mockMessagesCreate.mock.calls[1][0].messages[2]
+      .content[0] as { content: string };
+    const parsed = JSON.parse(toolResult.content) as {
+      sources: { id: string }[];
+    };
+    expect(parsed.sources[0]?.id).toBe('SRC-001');
   });
 
   it('returns expected text, calls Anthropic once, and does not call InsuranceService', async () => {
