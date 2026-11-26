@@ -22,6 +22,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "generate:documents": "node scripts/generate-policy-pdfs.mjs",
     "eval:retrieval": "node scripts/eval-retrieval.mjs",
+    "monitoring:examples": "node --env-file=.env scripts/run-monitoring-examples.mjs",
     "mcp:claims": "tsx mcp/claims/server.ts",
     "mcp:crm": "tsx mcp/crm/server.ts",
     "mcp:inspector": "npx @modelcontextprotocol/inspector   npx tsx mcp/crm/server.ts",

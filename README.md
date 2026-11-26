@@ -162,6 +162,27 @@ curl -s http://localhost:3000/workflows/claim-review/resume \
 | `thread_id` | Isolates this workflow run; must not reuse `conversationId` from Version A |
 | `Command({ resume })` | Supplies the adjuster decision; resumes inside the interrupt node without restarting from `START` |
 
+### Claim monitoring agent (in-memory LangChain singleton)
+
+- **Endpoint:** `POST /monitoring/claims`
+- **Behavior:** A single `createAgent()` instance (Haiku via Bedrock, **no** tools, **no** checkpointer) reuses one `systemPrompt` with business rules. Each request calls `onClaim()` with a **new** `thread_id` so claims do not share conversation history.
+- **Output:** Structured JSON (`compliant`, `violations[]`, `summary`) — educational only, not a binding decision.
+- **Why no MCP/RAG:** Rules apply to fields in the request body only; no policy PDF search or live claim systems.
+
+**Singleton vs memory:** The Nest service holds the compiled agent in memory. That is not the same as PostgresSaver conversation memory on `/agents/bedrock/ask`. The system prompt is included on every Bedrock call; each claim is a fresh user message.
+
+```bash
+curl -s http://localhost:3000/monitoring/claims \
+  -H "Content-Type: application/json" \
+  -d '{"claimId":"CLM-100","policyId":"POL-001","amount":25000,"currency":"CAD","incidentDate":"2026-11-01","submittedAt":"2026-11-25","description":"Minor water damage"}'
+```
+
+**Five sample scenarios** (with `npm run start:dev` running):
+
+```bash
+node --env-file=.env scripts/run-monitoring-examples.mjs
+```
+
 ### Version C — AgentCore Gateway benchmark (Phase 1, separate folder)
 
 Managed MCP over Lambda (not wired into Nest). See [aws/benchmark/README.md](aws/benchmark/README.md). **Do not run `terraform apply` until you explicitly approve deployment.**

@@ -9,6 +9,7 @@ import { InsuranceModule } from './insurance/insurance.module.js';
 import { RagModule } from './rag/rag.module.js';
 import { ClaimLookupModule } from './workflows/claim-lookup/claim-lookup.module.js';
 import { ClaimReviewModule } from './workflows/claim-review/claim-review.module.js';
+import { ClaimMonitoringModule } from './monitoring/claim-monitoring.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ClaimReviewModule } from './workflows/claim-review/claim-review.module.
     BedrockAgentModule,
     ClaimLookupModule,
     ClaimReviewModule,
+    ClaimMonitoringModule,
     InsuranceModule,
     RagModule,
   ],
